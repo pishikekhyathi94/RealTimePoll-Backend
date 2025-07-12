@@ -24,7 +24,6 @@ exports.create = async (req, res) => {
     error.statusCode = 400;
     throw error;
   }
-
   // find by email
   await User.findOne({
     where: {
@@ -33,7 +32,7 @@ exports.create = async (req, res) => {
   })
     .then(async (data) => {
       if (data) {
-        return "This email is already in use.";
+        return res.status(400).json({ message: "This email is already in use." });
       } else {
         console.log("email not found");
 
@@ -79,7 +78,7 @@ exports.create = async (req, res) => {
           })
           .catch((err) => {
             console.log(err);
-            res.status(500).send({
+            return res.status(500).send({
               message:
                 err.message || "Some error occurred while creating the User.",
             });
