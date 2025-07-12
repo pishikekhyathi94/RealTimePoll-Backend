@@ -4,7 +4,7 @@ module.exports = (app) => {
   var router = require("express").Router();
 
   // Create a new User
-  router.post("/users/", User.create);
+  router.post("/users/signup", User.create);
 
   // Retrieve all Users
   router.get("/users/", User.findAll);
@@ -21,5 +21,5 @@ module.exports = (app) => {
   // Delete all User
   router.delete("/users/", [authenticateRoute], User.deleteAll);
 
-  app.use("/recipeapi", router);
+  app.use("/Realtimepoll", router);
 };
