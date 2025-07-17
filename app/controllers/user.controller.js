@@ -46,6 +46,7 @@ exports.create = async (req, res) => {
           lastName: req.body.lastName,
           email: req.body.email,
           password: hash,
+          roles: req.body.roles || ["student"],
           salt: salt,
         };
 
@@ -72,11 +73,12 @@ exports.create = async (req, res) => {
                 lastName: user.lastName,
                 id: user.id,
                 token: token,
+               roles: user.roles, 
               };
               res.send(userInfo);
             });
           })
-          .catch((err) => {
+          .catch((err) => {       
             console.log(err);
             return res.status(500).send({
               message:
