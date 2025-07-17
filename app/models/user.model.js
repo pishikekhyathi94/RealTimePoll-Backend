@@ -18,6 +18,11 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.BLOB,
       allowNull: false,
     },
+     roles: {
+      type: Sequelize.JSON, 
+      allowNull: false,
+      defaultValue: ["student"], // You can default to any role
+    },
     salt: {
       type: Sequelize.BLOB,
       allowNull: false,
