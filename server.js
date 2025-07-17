@@ -35,6 +35,9 @@ require("./app/routes/recipe.routes")(app);
 require("./app/routes/recipeStep.routes")(app);
 require("./app/routes/recipeIngredient.routes")(app);
 require("./app/routes/user.routes")(app);
+require("./app/routes/class.routes")(app);
+// require("./app/routes/realTimePoll.routes")(app); // Comment out or remove this line
+// require("./app/routes/vote.routes")(app); // Comment out or remove this line
 
 // set port, listen for requests
 const PORT = process.env.PORT || 8080;
