@@ -1,7 +1,6 @@
 const db = require("../models");
 const Class = db.class;
 
-// Create and Save a new Class
 exports.create = (req, res) => {
   if (!req.body.name || !req.body.userId) {
     return res.status(400).send({ message: "Name and userId are required!" });
@@ -9,11 +8,11 @@ exports.create = (req, res) => {
   const newClass = {
     name: req.body.name,
     description: req.body.description,
-    userId: req.body.userId
+    userId: req.body.userId,
   };
   Class.create(newClass)
-    .then(data => res.send(data))
-    .catch(err => res.status(500).send({ message: err.message }));
+    .then((data) => res.send(data))
+    .catch((err) => res.status(500).send({ message: err.message }));
 };
 
 // Create and Save a new Class for a user
