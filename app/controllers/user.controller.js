@@ -24,6 +24,7 @@ exports.create = async (req, res) => {
     error.statusCode = 400;
     throw error;
   }
+
   // find by email
   await User.findOne({
     where: {
@@ -32,7 +33,9 @@ exports.create = async (req, res) => {
   })
     .then(async (data) => {
       if (data) {
-        return res.status(400).json({ message: "This email is already in use." });
+        return res
+          .status(400)
+          .json({ message: "This email is already in use." });
       } else {
         console.log("email not found");
 
@@ -46,8 +49,8 @@ exports.create = async (req, res) => {
           lastName: req.body.lastName,
           email: req.body.email,
           password: hash,
-          roles: req.body.roles || ["student"],
           salt: salt,
+          roles: req.body.roles || [],
         };
 
         // Save User in the database
@@ -73,12 +76,12 @@ exports.create = async (req, res) => {
                 lastName: user.lastName,
                 id: user.id,
                 token: token,
-               roles: user.roles, 
+                roles: user.roles || [],
               };
               res.send(userInfo);
             });
           })
-          .catch((err) => {       
+          .catch((err) => {
             console.log(err);
             return res.status(500).send({
               message:
