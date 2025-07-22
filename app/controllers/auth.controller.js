@@ -31,6 +31,7 @@ exports.login = async (req, res) => {
         lastName: user.lastName,
         id: user.id,
         token: token,
+        roles: JSON.parse(user.roles) || [],
       };
       res.send(userInfo);
     });
