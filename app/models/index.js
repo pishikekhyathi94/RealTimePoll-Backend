@@ -14,17 +14,12 @@ const db = {};
 db.Sequelize = Sequelize;
 db.sequelize = sequelize;
 
-db.ingredient = require("./ingredient.model.js")(sequelize, Sequelize);
-db.recipe = require("./recipe.model.js")(sequelize, Sequelize);
-db.recipeStep = require("./recipeStep.model.js")(sequelize, Sequelize);
-db.recipeIngredient = require("./recipeIngredient.model.js")(
-  sequelize,
-  Sequelize
-);
 db.session = require("./session.model.js")(sequelize, Sequelize);
 db.user = require("./user.model.js")(sequelize, Sequelize);
 db.class = require("./class.model.js")(sequelize, Sequelize);
-
+db.quiz = require("./userQuiz.model.js")(sequelize, Sequelize);
+db.question = require("./userQuestions.model.js")(sequelize, Sequelize);
+db.option = require("./userOptions.model.js")(sequelize, Sequelize);
 // foreign key for session
 db.user.hasMany(
   db.session,
@@ -37,59 +32,47 @@ db.session.belongsTo(
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
 
-// foreign key for recipe
 db.user.hasMany(
-  db.recipe,
-  { as: "recipe" },
+  db.class,
+  { as: "class" },
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
-db.recipe.belongsTo(
+db.class.belongsTo(
   db.user,
   { as: "user" },
-  { foreignKey: { allowNull: true }, onDelete: "CASCADE" }
-);
-
-// foreign key for recipeStep
-db.recipe.hasMany(
-  db.recipeStep,
-  { as: "recipeStep" },
-  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
-);
-db.recipeStep.belongsTo(
-  db.recipe,
-  { as: "recipe" },
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
 
-// foreign keys for recipeIngredient
-db.recipeStep.hasMany(
-  db.recipeIngredient,
-  { as: "recipeIngredient" },
+db.class.hasMany(
+  db.quiz,
+  { as: "quiz" },
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
-db.recipe.hasMany(
-  db.recipeIngredient,
-  { as: "recipeIngredient" },
+db.quiz.belongsTo(
+  db.class,
+  { as: "class" },
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
-db.ingredient.hasMany(
-  db.recipeIngredient,
-  { as: "recipeIngredient" },
+
+db.quiz.hasMany(
+  db.question,
+  { as: "question" },
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
-db.recipeIngredient.belongsTo(
-  db.recipeStep,
-  { as: "recipeStep" },
-  { foreignKey: { allowNull: true }, onDelete: "CASCADE" }
-);
-db.recipeIngredient.belongsTo(
-  db.recipe,
-  { as: "recipe" },
+db.question.belongsTo(
+  db.quiz,
+  { as: "quiz" },
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
-db.recipeIngredient.belongsTo(
-  db.ingredient,
-  { as: "ingredient" },
+
+db.question.hasMany(
+  db.option,
+  { as: "option" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+db.option.belongsTo(
+  db.question,
+  { as: "question" },
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
 
