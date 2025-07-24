@@ -6,6 +6,7 @@ module.exports = (app) => {
  router.get("/classes/user/:userId",authenticateRoute, classes.findAllForUser);
 
   router.get("/classes/:id", classes.findOne);
-
+  router.put("/classes/:id", classes.findOneAndUpdate);
+  router.delete("/classes/:id", classes.deleteOne);
   app.use("/Realtimepoll", router);
 };
