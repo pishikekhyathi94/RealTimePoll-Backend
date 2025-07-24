@@ -42,27 +42,30 @@ exports.findAllForUser = (req, res) => {
       });
   };
 
+  exports.findOneAndUpdate = (req, res) => {
+  const id = req.params.id;
+  Class.update(req.body, { where: { id: id } })
+    .then((num) => {
+      res.send({ message: "Class was updated successfully." });
+    })
 
-// Create and Save a new Class for a user
-exports.createForUser = (req, res) => {
-  const userId = req.params.userId;
-  if (!req.body.name) {
-    return res.status(400).send({ message: "Name is required!" });
-  }
-  const newClass = {
-    name: req.body.name,
-    description: req.body.description,
-    userId: userId
-  };
-  Class.create(newClass)
-    .then(data => res.send(data))
-    .catch(err => res.status(500).send({ message: err.message }));
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Error retrieving Class with id=" + id,
+      });
+    });
 };
 
-// Find all Classes for a user
-exports.findAllForUser = (req, res) => {
-  const userId = req.params.userId;
-  Class.findAll({ where: { userId: userId } })
-    .then(data => res.send(data))
-    .catch(err => res.status(500).send({ message: err.message }));
+exports.deleteOne = (req, res) => {
+  const id = req.params.id;
+  Class.destroy({ where: { id: id } })
+    .then((num) => {
+      res.send({ message: "Class was deleted successfully!" });
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Error retrieving Class with id=" + id,
+      });
+    });
 };
+
