@@ -148,3 +148,28 @@ exports.findOne = (req, res) => {
       });
     });
 };
+
+
+exports.delete = (req, res) => {
+  const id = req.params.quizId;
+  db.quiz
+    .destroy({
+      where: { id: id },
+    })
+    .then((num) => {
+      if (num === 1) {
+        res.send({
+          message: "Quiz was deleted successfully!",
+        });
+      } else {
+        res.status(404).send({
+          message: `Cannot delete Quiz with id=${id}. Maybe Quiz was not found!`,
+        });
+      }
+    })
+    .catch((err) => {
+      res.status(500).send({
+        message: err.message || "Could not delete Quiz with id=" + id,
+      });
+    });
+};
