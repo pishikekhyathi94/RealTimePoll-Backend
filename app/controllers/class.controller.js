@@ -69,3 +69,17 @@ exports.deleteOne = (req, res) => {
     });
 };
 
+exports.findAllClasses = async (req, res) => {
+  let classes = await Class.findAll();
+  const userId = req.query.userId;
+  if (userId) {
+    const StudentClass = db.studentClass;
+    const studentClasses = await StudentClass.findAll({ where: { userId } });
+    const registeredClassIds = new Set(studentClasses.map((sc) => sc.classId));
+    classes = classes.map((cls) => ({
+      ...cls.toJSON(),
+      isRegistered: registeredClassIds.has(cls.id),
+    }));
+  }
+  return res.status(200).json(classes);
+};

@@ -8,5 +8,7 @@ module.exports = (app) => {
   router.get("/classes/:id", classes.findOne);
   router.put("/classes/:id", classes.findOneAndUpdate);
   router.delete("/classes/:id", classes.deleteOne);
+  router.get("/all/classes", classes.findAllClasses);
+
   app.use("/Realtimepoll", router);
 };
