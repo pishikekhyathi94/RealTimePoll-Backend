@@ -8,6 +8,7 @@ module.exports = (app) => {
   router.get("/quiz/all/:classId", quiz.findAllForUser);
   router.get("/quiz/:quizId", quiz.findOne);
   router.delete("/quiz/:quizId", quiz.delete);
+  router.post("/manual/quiz", quiz.createManualQuiz);
 
   app.use("/Realtimepoll", router);
 };

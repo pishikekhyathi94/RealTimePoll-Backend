@@ -173,3 +173,48 @@ exports.delete = (req, res) => {
       });
     });
 };
+
+exports.createManualQuiz = async (req, res) => {
+  try {
+    const userId = req.body.user_id;
+    const classId = req.body.classId;
+    const quizName = req.body.title || "Untitled Quiz";
+    const quiz = await db.quiz.create({
+      classId: classId,
+      name: quizName,
+      description: req.body.description || "No description provided",
+      userId: userId,
+      category: req.body.category || "General",
+      is_enabled: req.body.is_enabled || false,
+    });
+    if (!req.body.questions || req.body.questions.length === 0) {
+      return res.status(400).send({
+        message: "At least one question is required to create a quiz.",
+      });
+    }
+
+    for (const questionObj of req.body.questions) {
+      const question = await db.question.create({
+        quizId: quiz.id,
+        name: questionObj.question,
+        timer: questionObj.timer || 90,
+      });
+
+      for (const optionObj of questionObj.options) {
+        await db.option.create({
+          questionId: question.id,
+          name: optionObj.option,
+          correctOption: optionObj.is_correct || false,
+        });
+      }
+    }
+    return res.status(200).json({
+      message: "Quiz saved successfully",
+    });
+  } catch (error) {
+    console.error("Error creating recipe:", error);
+    return res.status(500).send({
+      message: "An error occurred while creating the quiz.",
+    });
+  }
+};
