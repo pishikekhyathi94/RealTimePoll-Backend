@@ -3,11 +3,10 @@ const { CohereClient } = require("cohere-ai");
 const cohere = new CohereClient({
   token: process.env.COHERE_API_KEY,
 });
-// Create and Save a new Quiz
+
 exports.create = async (req, res) => {
   try {
     const userId = req.body.user_id;
-    // Validate request
     if (!req.body.prompt) {
       res.status(400).send({
         message: "prompt can not be empty!",
@@ -31,7 +30,6 @@ exports.create = async (req, res) => {
   return only valid JSON object with the questions array. Do not return any other text or explanation.
   Make sure to include at least one question with multiple options, and mark one of the options as correct by setting "is_correct": true.
     `;
-    console.log(prompt_to_ask);
     let response = await cohere.chat({
       message: prompt_to_ask,
     });
@@ -42,35 +40,10 @@ exports.create = async (req, res) => {
       .trim();
 
     const parsedJSON = JSON.parse(cleanedText);
-    const classId = req.body.classId;
-    const quizName = parsedJSON.title || "Untitled Quiz";
-    const quiz = await db.quiz.create({
-      classId: classId,
-      name: quizName,
-      description: parsedJSON.description || "No description provided",
-      userId: userId,
-    });
-
-    for (const questionObj of parsedJSON.questions) {
-      const question = await db.question.create({
-        quizId: quiz.id,
-        name: questionObj.question,
-        timer: questionObj.timer || 90,
-      });
-
-      for (const optionObj of questionObj.options) {
-        await db.option.create({
-          questionId: question.id,
-          name: optionObj.option,
-          correctOption: optionObj.is_correct || false,
-        });
-      }
-    }
     return res.status(200).json(parsedJSON);
   } catch (error) {
-    console.error("Error creating quiz:", error);
     return res.status(500).send({
-      message: "An error occurred while creating the quiz.",
+      message: "An error occurred while creating the recipe.",
     });
   }
 };

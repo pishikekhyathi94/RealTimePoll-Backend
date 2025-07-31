@@ -3,10 +3,8 @@ module.exports = (sequelize, Sequelize) => {
     name: {
       type: Sequelize.STRING,
       allowNull: false,
-    },
-    description: {
-      type: Sequelize.STRING,
-    },
+    }
+    
   });
 
   return Class;
