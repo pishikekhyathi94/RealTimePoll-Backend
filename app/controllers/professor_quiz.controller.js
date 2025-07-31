@@ -191,3 +191,147 @@ exports.createManualQuiz = async (req, res) => {
     });
   }
 };
+
+exports.update = async (req, res) => {
+  const id = req.params.quizId;
+  try {
+    if (!req.body.title || !req.body.description) {
+      return res.status(400).send({
+        message: "Title, description are required fields.",
+      });
+    }
+    const quiz = await db.quiz.findByPk(id);
+    if (!quiz) {
+      return res.status(404).send({
+        message: `Quiz with id=${id} not found.`,
+      });
+    }
+    quiz.name = req.body.title;
+    quiz.description = req.body.description;
+    quiz.is_enabled = req.body.is_enabled || false;
+    await quiz.save();
+    return res.status(200).json({
+      message: "Quiz updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating quiz:", error);
+    return res.status(500).send({
+      message: "An error occurred while updating the quiz.",
+    });
+  }
+};
+
+exports.updateQuestion = async (req, res) => {
+  try {
+    const question = await db.question.findByPk(req.body.id);
+    if (!question) {
+      return res.status(404).send({
+        message: `Question with id=${questionId} not found.`,
+      });
+    }
+    question.name = req.body.name;
+    question.timer = req.body.timer || 90; 
+    await question.save();
+    let existingOptions = await db.option.findAll({
+      where: { questionId: question.id },
+    });
+    const existingOptionNames = existingOptions.map((opt) => opt.name);
+    const newOptions = req.body.options || [];
+    const optionsToDelete = existingOptions.filter(
+      (opt) => !newOptions.some((newOpt) => newOpt.name === opt.name)
+    );
+    console.log("Options to delete:", optionsToDelete);
+    await db.option.destroy({
+      where: {
+        id: optionsToDelete.map((opt) => opt.id),
+      },
+    });
+    for (const option of newOptions) {
+      if (existingOptionNames.includes(option.name)) {
+        const existingOption = existingOptions.find(
+          (opt) => opt.name === option.name
+        );
+        console.log("Updating existing option:", existingOption);
+        existingOption.correctOption = option.is_correct || false;
+        await existingOption.save();
+      } else {
+        console.log("Creating new option:", option);
+        await db.option.create({
+          questionId: question.id,
+          name: option.name,
+          correctOption: option.is_correct || false,
+        });
+      }
+    }
+    return res.status(200).json({
+      message: "Question updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating question:", error);
+    return res.status(500).send({
+      message: "An error occurred while updating the question.",
+    });
+  }
+};
+
+exports.deleteQuestion = async (req, res) => {
+  const questionId = req.params.questionId;
+  try {
+    const question = await db.question.findByPk(questionId);
+    if (!question) {
+      return res.status(404).send({
+        message: `Question with id=${questionId} not found.`,
+      });
+    }
+    await db.option.destroy({
+      where: { questionId: question.id },
+    });
+    await question.destroy();
+    return res.status(200).json({
+      message: "Question deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting question:", error);
+    return res.status(500).send({
+      message: "An error occurred while deleting the question.",
+    });
+  }
+};
+
+exports.addQuestion = async (req, res) => {
+  try {
+    const quizId = req.body.quizId;
+    const questionText = req.body.question;
+    const timer = req.body.timer || 90;
+    const options = req.body.options || [];
+
+    if (!quizId || !questionText || options.length === 0) {
+      return res.status(400).send({
+        message: "quizId, question, and options are required fields.",
+      });
+    }
+
+    const question = await db.question.create({
+      quizId: quizId,
+      name: questionText,
+      timer: timer,
+    });
+
+    for (const option of options) {
+      await db.option.create({
+        questionId: question.id,
+        name: option.option,
+        correctOption: option.is_correct || false,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Question added successfully",
+    });
+  } catch (error) {
+    console.error("Error adding question:", error);
+    return res.status(500).send({
+      message: "An error occurred while adding the question.",
+    });
+  }
+};

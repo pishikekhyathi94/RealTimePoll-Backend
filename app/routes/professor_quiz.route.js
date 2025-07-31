@@ -9,6 +9,9 @@ module.exports = (app) => {
   router.get("/quiz/:quizId", quiz.findOne);
   router.delete("/quiz/:quizId", quiz.delete);
   router.post("/manual/quiz", quiz.createManualQuiz);
-
+  router.put("/quiz/:quizId", quiz.update);
+  router.put("/update/question", quiz.updateQuestion);
+  router.delete("/delete/question/:questionId", quiz.deleteQuestion);
+  router.post("/add/question", quiz.addQuestion);
   app.use("/Realtimepoll", router);
 };
