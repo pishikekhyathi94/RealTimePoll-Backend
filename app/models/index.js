@@ -21,6 +21,11 @@ db.quiz = require("./userQuiz.model.js")(sequelize, Sequelize);
 db.question = require("./userQuestions.model.js")(sequelize, Sequelize);
 db.option = require("./userOptions.model.js")(sequelize, Sequelize);
 db.studentClass = require("./studentClass.model.js")(sequelize, Sequelize);
+db.quizSubmissions = require("./quizSubmissions.model.js")(
+  sequelize,
+  Sequelize
+);
+db.finishQuiz = require("./studentQuizFinish.model.js")(sequelize, Sequelize);
 // foreign key for session
 db.user.hasMany(
   db.session,
@@ -104,6 +109,66 @@ db.user.hasMany(
 db.studentClass.belongsTo(
   db.user,
   { as: "user" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+
+db.quiz.hasMany(
+  db.quizSubmissions,
+  { as: "quizSubmissions" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+db.quizSubmissions.belongsTo(
+  db.quiz,
+  { as: "quiz" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+
+db.user.hasMany(
+  db.quizSubmissions,
+  { as: "quizSubmissions" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+db.quizSubmissions.belongsTo(
+  db.user,
+  { as: "user" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+
+db.option.hasMany(
+  db.quizSubmissions,
+  { as: "quizSubmissions" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+
+db.question.hasMany(
+  db.quizSubmissions,
+  { as: "quizSubmissions" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+db.quizSubmissions.belongsTo(
+  db.question,
+  { as: "question" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+
+db.user.hasMany(
+  db.finishQuiz,
+  { as: "finishQuiz" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+db.finishQuiz.belongsTo(
+  db.user,
+  { as: "user" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+db.quiz.hasMany(
+  db.finishQuiz,
+  { as: "finishQuiz" },
+  { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
+);
+db.finishQuiz.belongsTo(
+  db.quiz,
+  { as: "quiz" },
   { foreignKey: { allowNull: false }, onDelete: "CASCADE" }
 );
 

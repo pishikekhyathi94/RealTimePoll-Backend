@@ -19,3 +19,44 @@ exports.registerForClass = (req, res) => {
       return res.status(500).send({ message: err.message });
     });
 };
+
+exports.submitQuiz = (req, res) => {
+  if (!req.body.quizId || !req.body.userId) {
+    return res.status(400).send({
+      message: "quizId, userId, and question and option are required!",
+    });
+  }
+
+  const submission = {
+    quizId: req.body.quizId,
+    userId: req.body.userId,
+    questionId: req.body.questionId,
+    optionId: req.body.optionId,
+  };
+  db.quizSubmissions
+    .create(submission)
+    .then((data) => res.status(200).json(data))
+    .catch((err) => {
+      console.error("Error submitting quiz:", err);
+      return res.status(500).send({ message: err.message });
+    });
+};
+
+
+exports.finishQuiz = (req, res) => {
+  if (!req.body.quizId || !req.body.userId) {
+    return res.status(400).send({ message: "quizId and userId are required!" });
+  }
+
+  const finish = {
+    quizId: req.body.quizId,
+    userId: req.body.userId,
+  };
+  db.finishQuiz
+    .create(finish)
+    .then((data) => res.status(200).json(data))
+    .catch((err) => {
+      console.error("Error finishing quiz:", err);
+      return res.status(500).send({ message: err.message });
+    });
+};
