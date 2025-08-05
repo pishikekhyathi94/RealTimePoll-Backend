@@ -19,7 +19,6 @@ exports.registerForClass = (req, res) => {
       return res.status(500).send({ message: err.message });
     });
 };
-
 exports.submitQuiz = (req, res) => {
   if (!req.body.quizId || !req.body.userId) {
     return res.status(400).send({
@@ -27,11 +26,21 @@ exports.submitQuiz = (req, res) => {
     });
   }
 
+  let optionIds = req.body.optionId;
+  if (Array.isArray(optionIds)) {
+    // Already an array, use as is
+  } else if (optionIds !== undefined) {
+    // Single value, wrap in array
+    optionIds = [optionIds];
+  } else {
+    optionIds = [];
+  }
+
   const submission = {
     quizId: req.body.quizId,
     userId: req.body.userId,
     questionId: req.body.questionId,
-    optionId: req.body.optionId,
+    options: optionIds,
   };
   db.quizSubmissions
     .create(submission)
