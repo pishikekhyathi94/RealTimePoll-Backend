@@ -13,5 +13,7 @@ module.exports = (app) => {
   router.put("/update/question", quiz.updateQuestion);
   router.delete("/delete/question/:questionId", quiz.deleteQuestion);
   router.post("/add/question", quiz.addQuestion);
+    router.put("/update/quiz/type", quiz.updateQuizType);
+
   app.use("/Realtimepoll", router);
 };

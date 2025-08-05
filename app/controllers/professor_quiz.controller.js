@@ -3,6 +3,7 @@ const { CohereClient } = require("cohere-ai");
 const cohere = new CohereClient({
   token: process.env.COHERE_API_KEY,
 });
+const Op = db.Sequelize.Op;
 
 exports.create = async (req, res) => {
   try {
@@ -67,20 +68,32 @@ exports.findAllForUser = (req, res) => {
       ],
       order: [["createdAt", "ASC"]],
     })
-    .then((data) => {
+    .then(async (data) => {
       if (data) {
+        const userId = req.query.userId;
+        const quizIds = data.map((quiz) => quiz.id);
+        const finishQuizData = await db.finishQuiz.findAll({
+          where: {
+            quizId: { [Op.in]: quizIds },
+            userId: userId,
+          },
+        });
+        const finishedQuizIds = new Set(finishQuizData.map((fq) => fq.quizId));
+        data.forEach((quiz) => {
+          quiz.dataValues.is_finished = finishedQuizIds.has(quiz.id);
+        });
         res.send(data);
       } else {
         res.status(404).send({
-          message: `Cannot find Quizs for user with id=${userId}.`,
+          message: `Cannot find Recipes for user with id=${userId}.`,
         });
       }
     })
     .catch((err) => {
-      console.log("Error retrieving Quizs:", err);
+      console.log("Error retrieving Recipes:", err);
       res.status(500).send({
         message:
-          err.message || "Error retrieving Quizs for user with id=" + userId,
+          err.message || "Error retrieving Recipes for user with id=" + userId,
       });
     });
 };
@@ -223,54 +236,64 @@ exports.update = async (req, res) => {
 
 exports.updateQuestion = async (req, res) => {
   try {
-    const question = await db.question.findByPk(req.body.id);
-    if (!question) {
-      return res.status(404).send({
-        message: `Question with id=${questionId} not found.`,
-      });
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(400).send({ message: "No token provided." });
     }
-    question.name = req.body.name;
-    question.timer = req.body.timer || 90; 
-    await question.save();
-    let existingOptions = await db.option.findAll({
-      where: { questionId: question.id },
-    });
-    const existingOptionNames = existingOptions.map((opt) => opt.name);
-    const newOptions = req.body.options || [];
-    const optionsToDelete = existingOptions.filter(
-      (opt) => !newOptions.some((newOpt) => newOpt.name === opt.name)
+    const questionId = req.body.id;
+    if (!questionId) {
+      return res.status(400).send({ message: "Question ID is required." });
+    }
+    const question = req.body.name;
+    if (!question || question.trim() === "") {
+      return res.status(400).send({ message: "question is required." });
+    }
+    const options = req.body.options;
+    if (!options || options.length < 2) {
+      return res
+        .status(400)
+        .send({ message: "At least two options are required." });
+    }
+
+    await db.question.update(
+      { name: question, timer: req.body.timer || 60 },
+      { where: { id: questionId } }
     );
-    console.log("Options to delete:", optionsToDelete);
-    await db.option.destroy({
-      where: {
-        id: optionsToDelete.map((opt) => opt.id),
-      },
+    const existingOptions = await db.option.findAll({
+      where: { questionId: questionId },
     });
-    for (const option of newOptions) {
-      if (existingOptionNames.includes(option.name)) {
-        const existingOption = existingOptions.find(
-          (opt) => opt.name === option.name
+    const optionIdsInBody = options.filter((o) => o.id).map((o) => o.id);
+    for (const dbOption of existingOptions) {
+      if (!optionIdsInBody.includes(dbOption.id)) {
+        await db.option.destroy({ where: { id: dbOption.id } });
+      }
+    }
+    for (const option of options) {
+      console.log("option", option);
+      if (!option.name || option.name.trim() === "") {
+        continue;
+      }
+
+      if (option.id) {
+        console.log("Updating option:", option);
+        await db.option.update(
+          { name: option.name, correctOption: option.correctOption || false },
+          { where: { id: option.id, questionId: questionId } }
         );
-        console.log("Updating existing option:", existingOption);
-        existingOption.correctOption = option.is_correct || false;
-        await existingOption.save();
       } else {
         console.log("Creating new option:", option);
         await db.option.create({
-          questionId: question.id,
           name: option.name,
-          correctOption: option.is_correct || false,
+          questionId: questionId,
+          correctOption: option.correctOption || false,
         });
       }
     }
-    return res.status(200).json({
-      message: "Question updated successfully",
-    });
+
+    return res.status(200).json("question updated successfully");
   } catch (error) {
-    console.error("Error updating question:", error);
-    return res.status(500).send({
-      message: "An error occurred while updating the question.",
-    });
+    console.error("Error updating quiz question:", error);
+    return res.status(500).send({ message: "Server error." });
   }
 };
 
@@ -332,6 +355,29 @@ exports.addQuestion = async (req, res) => {
     console.error("Error adding question:", error);
     return res.status(500).send({
       message: "An error occurred while adding the question.",
+    });
+  }
+};
+
+exports.updateQuizType = async (req, res) => {
+  try {
+    const quizId = req.body.quizId;
+    const quizType = req.body.quizType;
+
+    if (!quizId || quizType === undefined) {
+      return res.status(400).send({
+        message: "quizId and quizType are required fields.",
+      });
+    }
+
+    await db.quiz.update({ is_enabled: quizType }, { where: { id: quizId } });
+    return res.status(200).json({
+      message: "Quiz type updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating quiz type:", error);
+    return res.status(500).send({
+      message: "An error occurred while updating the quiz type.",
     });
   }
 };

@@ -7,6 +7,10 @@ module.exports = (sequelize, Sequelize) => {
     description: {
       type: Sequelize.STRING,
     },
+    is_enabled: {
+      type: Sequelize.BOOLEAN,
+      defaultValue: true,
+    },
   });
 
   return Quiz;
