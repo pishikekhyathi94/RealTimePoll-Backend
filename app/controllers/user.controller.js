@@ -97,10 +97,17 @@ exports.create = async (req, res) => {
 
 // Retrieve all Users from the database.
 exports.findAll = (req, res) => {
-  const id = req.query.id;
-  var condition = id ? { id: { [Op.like]: `%${id}%` } } : null;
-
-  User.findAll({ where: condition })
+  User.findAll({
+    attributes: [
+      "roles",
+      "id",
+      "firstName",
+      "lastName",
+      "email",
+      "createdAt",
+      "updatedAt",
+    ],
+  })
     .then((data) => {
       res.send(data);
     })
