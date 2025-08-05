@@ -5,7 +5,7 @@ on:
   pull_request:
     types: [closed]
     branches:
-      - dev
+      - develop
 
 jobs:
   aws-deploy:
