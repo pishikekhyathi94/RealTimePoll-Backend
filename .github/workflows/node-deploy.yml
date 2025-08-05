@@ -16,6 +16,8 @@ jobs:
       DB_USER: ${{ secrets.AWS_DB_USER }}
       DB_NAME: ${{ secrets.AWS_DB_NAME }}
       SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      PORT: ${{ secrets.PORT }}
+      COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
 
     steps:
       - uses: actions/checkout@v2
@@ -31,6 +33,8 @@ jobs:
           echo DB_USER = "$DB_USER" >> .env
           echo DB_NAME = "$DB_NAME" >> .env
           echo SECRET_KEY = "$SECRET_KEY" >> .env
+          echo PORT = "$PORT" >> .env
+          echo COHERE_API_KEY = "$COHERE_API_KEY" >> .env
 
       - run: npm run bundle
 
@@ -42,7 +46,7 @@ jobs:
           SOURCE: "deploy/"
           REMOTE_HOST: "recipe.eaglesoftwareteam.com"
           REMOTE_USER: ubuntu
-          TARGET: "nodeapps/recipe-backend"
+          TARGET: "nodeapps/RealTimePoll-Backend"
       - name: Execute SSH commmands on remote server
         uses: JimCronqvist/action-ssh@master
         env:
@@ -52,9 +56,9 @@ jobs:
           privateKey: ${{ secrets.SERVER_SSH_KEY }}
           debug: false
           command: |
-            cd nodeapps/recipe-backend
+            cd nodeapps/RealTimePoll-Backend
             npm install
-            sudo systemctl stop recipe-backend
-            sudo cp recipe-backend.service /lib/systemd/system/recipe-backend.service
+            sudo systemctl stop RealTimePoll-Backend
+            sudo cp RealTimePoll-Backend.service /lib/systemd/system/RealTimePoll-Backend.service
             sudo systemctl daemon-reload
-            sudo systemctl start recipe-backend
+            sudo systemctl start RealTimePoll-Backend
