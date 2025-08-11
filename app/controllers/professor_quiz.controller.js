@@ -381,3 +381,214 @@ exports.updateQuizType = async (req, res) => {
     });
   }
 };
+
+exports.getQuizReport = async (req, res) => {
+  const quizId = req.params.quizId;
+  try {
+    const submissions = await db.quizSubmissions.findAll({
+      where: { quizId: quizId },
+      include: [
+        {
+          model: db.user,
+          as: "user",
+          attributes: ["id", "firstName", "lastName", "email"],
+        },
+      ],
+    });
+    if (!submissions || submissions.length === 0) {
+      return res.status(404).send({
+        message: `No submissions found for quiz with id=${quizId}.`,
+      });
+    }
+    if (req.query.userId) {
+      const userId = req.query.userId;
+      const userSubmissions = submissions.filter(
+        (sub) => sub.user && sub.user.id == userId
+      );
+      const questionIds = userSubmissions.map((sub) => sub.questionId);
+      const questions = await db.question.findAll({
+        where: { id: { [Op.in]: questionIds } },
+        include: [
+          {
+            model: db.option,
+            as: "option",
+          },
+        ],
+      });
+      const questionMap = new Map();
+      questions.forEach((q) => questionMap.set(q.id, q));
+
+      const report = {
+        user: userSubmissions[0]?.user
+          ? {
+              id: userSubmissions[0].user.id,
+              firstName: userSubmissions[0].user.firstName,
+              lastName: userSubmissions[0].user.lastName,
+              email: userSubmissions[0].user.email,
+            }
+          : null,
+        questions: [],
+      };
+
+      userSubmissions.forEach((submission) => {
+        const question = questionMap.get(submission.questionId);
+        let selectedOptionIds = [];
+        try {
+          selectedOptionIds = JSON.parse(submission.options);
+        } catch (e) {
+          selectedOptionIds = [];
+        }
+        let options = [];
+        if (question && question.option) {
+          options = question.option.map((opt) => ({
+            ...opt.dataValues,
+            user_selected: selectedOptionIds.includes(opt.id),
+          }));
+        }
+        report.questions.push({
+          questionId: submission.questionId,
+          question: question ? question.name : null,
+          options: options,
+        });
+      });
+
+      const quiz = await db.quiz.findOne({
+        where: { id: quizId },
+        include: [
+          {
+            model: db.class,
+            as: "class",
+          },
+        ],
+      });
+
+      let class_details = null;
+      let quiz_details = null;
+
+      if (quiz) {
+        quiz_details = {
+          id: quiz.id,
+          name: quiz.name,
+          description: quiz.description,
+          category: quiz.category,
+          is_enabled: quiz.is_enabled,
+          createdAt: quiz.createdAt,
+          updatedAt: quiz.updatedAt,
+        };
+        if (quiz.class) {
+          class_details = {
+            id: quiz.class.id,
+            name: quiz.class.name,
+            description: quiz.class.description,
+            createdAt: quiz.class.createdAt,
+            updatedAt: quiz.class.updatedAt,
+          };
+        }
+      }
+      report.class_details = class_details;
+      report.quiz_details = quiz_details;
+      return res.status(200).json({ report });
+    } else {
+      const userMap = new Map();
+      submissions.forEach((submission) => {
+        const user = submission.user;
+        if (user && !userMap.has(user.id)) {
+          userMap.set(user.id, {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            questions: [],
+          });
+        }
+      });
+      const reports = Array.from(userMap.values());
+      const questionIds = submissions.map((sub) => sub.questionId);
+      const questions = await db.question.findAll({
+        where: { id: { [Op.in]: questionIds } },
+        include: [
+          {
+            model: db.option,
+            as: "option",
+          },
+        ],
+      });
+      const questionMap = new Map();
+      questions.forEach((q) => questionMap.set(q.id, q));
+
+      submissions.forEach((submission) => {
+        if (submission.user && userMap.has(submission.user.id)) {
+          const user = userMap.get(submission.user.id);
+          const question = questionMap.get(submission.questionId);
+          let selectedOptionIds = [];
+          try {
+            selectedOptionIds = JSON.parse(submission.options);
+          } catch (e) {
+            selectedOptionIds = [];
+          }
+          const selectedOptions =
+            question && question.option
+              ? question.option.filter((opt) =>
+                  selectedOptionIds.includes(opt.id)
+                )
+              : [];
+          if (question && question.option) {
+            question.option = question.option.map((opt) => ({
+              ...opt.dataValues,
+              user_selected: selectedOptionIds.includes(opt.id),
+            }));
+          }
+          user.questions.push({
+            questionId: submission.questionId,
+            question: question ? question.name : null,
+            options: question ? question.option : [],
+          });
+
+          userMap.set(user.id, user);
+        }
+      });
+      const quiz = await db.quiz.findOne({
+        where: { id: quizId },
+        include: [
+          {
+            model: db.class,
+            as: "class",
+          },
+        ],
+      });
+
+      let class_details = null;
+      let quiz_details = null;
+
+      if (quiz) {
+        quiz_details = {
+          id: quiz.id,
+          name: quiz.name,
+          description: quiz.description,
+          category: quiz.category,
+          is_enabled: quiz.is_enabled,
+          createdAt: quiz.createdAt,
+          updatedAt: quiz.updatedAt,
+        };
+        if (quiz.class) {
+          class_details = {
+            id: quiz.class.id,
+            name: quiz.class.name,
+            description: quiz.class.description,
+            createdAt: quiz.class.createdAt,
+            updatedAt: quiz.class.updatedAt,
+          };
+        }
+      }
+      reports.forEach((report) => {
+        report.class_details = class_details;
+        report.quiz_details = quiz_details;
+      });
+      return res.status(200).json({ reports });
+    }
+  } catch (error) {
+    return res.status(500).send({
+      message: "An error occurred while retrieving the quiz report.",
+    });
+  }
+};
