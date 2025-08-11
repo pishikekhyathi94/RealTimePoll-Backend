@@ -16,7 +16,7 @@ module.exports = (app) => {
   router.put("/users/:id", [authenticateRoute], User.update);
 
   // Delete a User with id
-  router.delete("/users/:id", [authenticateRoute], User.delete);
+  router.delete("/user/:id", [authenticateRoute], User.delete);
 
   // Delete all User
   router.delete("/users/", [authenticateRoute], User.deleteAll);
