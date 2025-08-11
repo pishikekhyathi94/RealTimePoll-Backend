@@ -11,6 +11,9 @@ module.exports = (sequelize, Sequelize) => {
       type: Sequelize.BOOLEAN,
       defaultValue: true,
     },
+     start_time: {
+      type: Sequelize.DATE,
+    },
   });
 
   return Quiz;
