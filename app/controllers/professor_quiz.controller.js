@@ -172,6 +172,7 @@ exports.createManualQuiz = async (req, res) => {
       userId: userId,
       category: req.body.category || "General",
       is_enabled: req.body.is_enabled || false,
+      start_time: req.body.start_time || new Date(),
     });
     if (!req.body.questions || req.body.questions.length === 0) {
       return res.status(400).send({
