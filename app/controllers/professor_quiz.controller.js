@@ -504,9 +504,9 @@ exports.getQuizReport = async (req, res) => {
         }
       });
       const reports = Array.from(userMap.values());
-      const questionIds = submissions.map((sub) => sub.questionId);
-      const questions = await db.question.findAll({
-        where: { id: { [Op.in]: questionIds } },
+
+      const allQuestions = await db.question.findAll({
+        where: { quizId: quizId },
         include: [
           {
             model: db.option,
@@ -515,38 +515,44 @@ exports.getQuizReport = async (req, res) => {
         ],
       });
       const questionMap = new Map();
-      questions.forEach((q) => questionMap.set(q.id, q));
+      allQuestions.forEach((q) => questionMap.set(q.id, q));
 
+      const userQuestionSubmissionMap = new Map();
       submissions.forEach((submission) => {
-        if (submission.user && userMap.has(submission.user.id)) {
-          const user = userMap.get(submission.user.id);
-          const question = questionMap.get(submission.questionId);
-          let selectedOptionIds = [];
-          try {
-            selectedOptionIds = JSON.parse(submission.options);
-          } catch (e) {
-            selectedOptionIds = [];
-          }
-          const selectedOptions =
-            question && question.option
-              ? question.option.filter((opt) =>
-                  selectedOptionIds.includes(opt.id)
-                )
-              : [];
-          if (question && question.option) {
-            question.option = question.option.map((opt) => ({
-              ...opt.dataValues,
-              user_selected: selectedOptionIds.includes(opt.id),
-            }));
-          }
-          user.questions.push({
-            questionId: submission.questionId,
-            question: question ? question.name : null,
-            options: question ? question.option : [],
-          });
-
-          userMap.set(user.id, user);
+        if (!userQuestionSubmissionMap.has(submission.userId)) {
+          userQuestionSubmissionMap.set(submission.userId, new Map());
         }
+        userQuestionSubmissionMap
+          .get(submission.userId)
+          .set(submission.questionId, submission);
+      });
+
+      reports.forEach((user) => {
+        user.questions = [];
+        allQuestions.forEach((question) => {
+          let selectedOptionIds = [];
+          const submission = userQuestionSubmissionMap
+            .get(user.id)
+            ?.get(question.id);
+          if (submission) {
+            try {
+              selectedOptionIds = JSON.parse(submission.options);
+            } catch (e) {
+              selectedOptionIds = [];
+            }
+          }
+          const options = question.option
+            ? question.option.map((opt) => ({
+                ...opt.dataValues,
+                user_selected: selectedOptionIds.includes(opt.id),
+              }))
+            : [];
+          user.questions.push({
+            questionId: question.id,
+            question: question.name,
+            options: options,
+          });
+        });
       });
       const quiz = await db.quiz.findOne({
         where: { id: quizId },
@@ -588,6 +594,7 @@ exports.getQuizReport = async (req, res) => {
       return res.status(200).json({ reports });
     }
   } catch (error) {
+    console.error("Error retrieving quiz report:", error);
     return res.status(500).send({
       message: "An error occurred while retrieving the quiz report.",
     });
