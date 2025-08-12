@@ -28,9 +28,7 @@ exports.submitQuiz = (req, res) => {
 
   let optionIds = req.body.optionId;
   if (Array.isArray(optionIds)) {
-    // Already an array, use as is
   } else if (optionIds !== undefined) {
-    // Single value, wrap in array
     optionIds = [optionIds];
   } else {
     optionIds = [];
@@ -77,10 +75,6 @@ exports.finishQuiz = async (req, res) => {
         .json({ message: `Quiz will start at ${startTime}` });
     }
 
-    await db.finishQuiz.create({
-      userId: userId,
-      quizId: quizId,
-    });
     const quizdetails = await db.quiz.findOne({
       where: { id: quizId },
       include: [
@@ -115,7 +109,29 @@ exports.finishQuiz = async (req, res) => {
     const options = await db.option.findAll({
       where: { questionId: current_question.id },
     });
-
+    await db.finishQuiz.create({
+      userId: userId,
+      quizId: quizId,
+    });
+    if (quizdetails.question.length > 0 && current_question) {
+      const currentIndex = quizdetails.question.findIndex(
+        (q) => q.id === current_question.id
+      );
+      if (currentIndex > 0) {
+        const unansweredQuestions = quizdetails.question.slice(0, currentIndex);
+        const bulkSubmissions = unansweredQuestions.map((q) => ({
+          quizId: quizId,
+          userId: userId,
+          questionId: q.id,
+          options: [],
+        }));
+        if (bulkSubmissions.length > 0) {
+          await db.quizSubmissions.bulkCreate(bulkSubmissions, {
+            ignoreDuplicates: true,
+          });
+        }
+      }
+    }
     return res.status(200).json({
       question: current_question,
       options: options,

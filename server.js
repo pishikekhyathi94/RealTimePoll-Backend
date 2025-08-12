@@ -4,51 +4,65 @@ const express = require("express");
 const cors = require("cors");
 
 const app = express();
+const http = require("http");
 
 const db = require("./app/models");
+const server = http.createServer(app);
 
+const socketIo = require("socket.io");
+const io = socketIo(server, {
+  cors: {
+    origin: "http://localhost:8081",
+  },
+});
 db.sequelize.sync();
 
-var corsOptions = {
-  origin: "http://localhost:8081",
-};
-
-app.use(cors(corsOptions));
+app.use(cors());
 app.options("*", cors());
 
-
-// parse requests of content-type - application/json
 app.use(express.json());
 
-
-// parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 
-// simple route
 app.get("/", (req, res) => {
+  console.log(new Date(), " - GET /");
   res.json({ message: "Welcome to the recipe backend." });
 });
 
 require("./app/routes/auth.routes.js")(app);
-require("./app/routes/ingredient.routes")(app);
-require("./app/routes/recipe.routes")(app);
-require("./app/routes/recipeStep.routes")(app);
-require("./app/routes/recipeIngredient.routes")(app);
+require("./app/routes/professor_quiz.route.js")(app);
 require("./app/routes/user.routes")(app);
 require("./app/routes/class.routes")(app);
 require("./app/routes/student.routes.js")(app);
-require("./app/routes/professor_quiz.route.js")(app);
-// require("./app/routes/realTimePoll.routes")(app); // Comment out or remove this line
-// require("./app/routes/vote.routes")(app); // Comment out or remove this line
 
-// set port, listen for requests
+io.on("connect", (socket) => {
+  socket.on("participateQuiz", (quizId) => {
+    socket.join(`quiz-${quizId}`);
+  });
+
+  socket.on("answerSubmission", (data) => {
+    const { quizId, questionId, option, studentId } = data;
+
+    io.to(`quiz-${quizId}`).emit("newAnswerSubmission", {
+      quizId,
+      questionId,
+      option,
+      studentId,
+      timestamp: new Date(),
+    });
+
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
 const PORT = process.env.PORT || 8080;
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}.`);
+  server.listen(PORT, () => {
+    console.log('Server is running on port ${PORT}.');
   });
 }
 
 module.exports = app;
-
-
